@@ -168,6 +168,35 @@ public final class Action<Input, Output, Error: Swift.Error> {
 		}
 	}
 
+	/// Initializes an `Action` that applies the given transform to inputs, and forwards
+	/// the inputs to its wrapped `Action`.
+	///
+	/// The created `Action` shares the states of the wrapped `Action`, including the
+	/// availability and execution status.
+	///
+	/// - parameters:
+	///   - action: The wrapped `Action`.
+	///   - transform: The input transform.
+	public init<Inner>(_ action: Action<Inner, Output, Error>, _ transform: @escaping (Value) -> Inner) {
+		// These are unused, but we still need to fill them for a complete instance.
+		deinitToken = Lifetime.Token()
+		eventsObserver = .init()
+		disabledErrorsObserver = .init()
+
+		lifetime = action.lifetime
+		events = action.events
+		disabledErrors = action.disabledErrors
+		values = action.values
+		errors = action.errors
+		completed = action.completed
+		isExecuting = action.isExecuting
+		isEnabled = action.isEnabled
+
+		execute = { _, input in
+			return action.execute(action, transform(input))
+		}
+	}
+
 	/// Initializes an `Action` that uses a property as its state.
 	///
 	/// When the `Action` is asked to start the execution, a unit of work — represented by
